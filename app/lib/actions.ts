@@ -51,24 +51,63 @@ const FormSchema = z.object({
   
     const { customerId, amount, status } = validatedFields.data;
   
-    const amountInCents = amount * 100;
-    const date = new Date().toISOString().split('T')[0];
-  
     try {
-      await sql`
-        INSERT INTO invoices (customer_id, amount, status, date)
-        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-      `;
+      const response = await fetch('http://localhost:8080/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: Number(customerId),
+          amount,
+          status,
+        }),
+      });
+  
+      if (!response.ok) {
+        return { message: 'Spring Error: Failed to Create Invoice.' };
+      }
     } catch (error) {
       console.error(error);
-      return {
-        message: 'Database Error: Failed to Create Invoice.',
-      };
+      return { message: 'Network Error: Failed to Create Invoice.' };
     }
   
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
   }
+
+  // export async function createInvoice(prevState: State, formData: FormData) {
+  //   const validatedFields = CreateInvoice.safeParse({
+  //     customerId: formData.get('customerId'),
+  //     amount: formData.get('amount'),
+  //     status: formData.get('status'),
+  //   });
+  
+  //   if (!validatedFields.success) {
+  //     return {
+  //       errors: validatedFields.error.flatten().fieldErrors,
+  //       message: 'Missing Fields. Failed to Create Invoice.',
+  //     };
+  //   }
+  
+  //   const { customerId, amount, status } = validatedFields.data;
+  
+  //   const amountInCents = amount * 100;
+  //   const date = new Date().toISOString().split('T')[0];
+  
+  //   try {
+  //     await sql`
+  //       INSERT INTO invoices (customer_id, amount, status, date)
+  //       VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+  //     `;
+  //   } catch (error) {
+  //     console.error(error);
+  //     return {
+  //       message: 'Database Error: Failed to Create Invoice.',
+  //     };
+  //   }
+  
+  //   revalidatePath('/dashboard/invoices');
+  //   redirect('/dashboard/invoices');
+  // }
 
   export async function updateInvoice(
     id: string,
@@ -80,34 +119,97 @@ const FormSchema = z.object({
       amount: formData.get('amount'),
       status: formData.get('status'),
     });
-   
+  
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
         message: 'Missing Fields. Failed to Update Invoice.',
       };
     }
-   
+  
     const { customerId, amount, status } = validatedFields.data;
-    const amountInCents = amount * 100;
-   
+  
     try {
-      await sql`
-        UPDATE invoices
-        SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-        WHERE id = ${id}
-      `;
+      const response = await fetch(`http://localhost:8080/api/invoices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: Number(customerId),
+          amount,
+          status,
+        }),
+      });
+  
+      if (!response.ok) {
+        return { message: 'Spring Error: Failed to Update Invoice.' };
+      }
     } catch (error) {
-      return { message: 'Database Error: Failed to Update Invoice.' };
+      console.error(error);
+      return { message: 'Network Error: Failed to Update Invoice.' };
     }
-   
+  
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
   }
-  export async function deleteInvoice(id: string) {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
-    revalidatePath('/dashboard/invoices');
-  }
+
+  // export async function updateInvoice(
+  //   id: string,
+  //   prevState: State,
+  //   formData: FormData,
+  // ) {
+  //   const validatedFields = UpdateInvoice.safeParse({
+  //     customerId: formData.get('customerId'),
+  //     amount: formData.get('amount'),
+  //     status: formData.get('status'),
+  //   });
+   
+  //   if (!validatedFields.success) {
+  //     return {
+  //       errors: validatedFields.error.flatten().fieldErrors,
+  //       message: 'Missing Fields. Failed to Update Invoice.',
+  //     };
+  //   }
+   
+  //   const { customerId, amount, status } = validatedFields.data;
+  //   const amountInCents = amount * 100;
+   
+  //   try {
+  //     await sql`
+  //       UPDATE invoices
+  //       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+  //       WHERE id = ${id}
+  //     `;
+  //   } catch (error) {
+  //     return { message: 'Database Error: Failed to Update Invoice.' };
+  //   }
+   
+  //   revalidatePath('/dashboard/invoices');
+  //   redirect('/dashboard/invoices');
+  // }
+
+
+    export async function deleteInvoice(id: string) {
+      try {
+        const response = await fetch(`http://localhost:8080/api/invoices/${id}`, {
+          method: 'DELETE',
+        });
+    
+        if (!response.ok) {
+          throw new Error('Spring Error: Failed to Delete Invoice.');
+        }
+      } catch (error) {
+        console.error(error);
+        throw new Error('Network Error: Failed to Delete Invoice.');
+      }
+    
+      revalidatePath('/dashboard/invoices');
+    }
+
+
+  // export async function deleteInvoice(id: string) {
+  //   await sql`DELETE FROM invoices WHERE id = ${id}`;
+  //   revalidatePath('/dashboard/invoices');
+  // }
 
   export async function authenticate(
     prevState: string | undefined,
